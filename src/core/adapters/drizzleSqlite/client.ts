@@ -1,6 +1,6 @@
 import path from "node:path";
-import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
 export type Database = ReturnType<typeof drizzle<typeof schema>>;

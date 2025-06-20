@@ -1,0 +1,21 @@
+対象パス	ユースケース名	説明
+/	プロジェクト一覧表示	監視対象プロジェクトの一覧を表示する
+/	プロジェクト選択	特定のプロジェクトを選択して詳細表示に移動する
+/projects/[projectName]	プロジェクト詳細表示	選択されたプロジェクトの基本情報（名前、セッション数等）を表示する
+/projects/[projectName]	セッション一覧表示	プロジェクト内のセッション一覧を表示する
+/projects/[projectName]	セッション選択	特定のセッションを選択してチャットルームに移動する
+/projects/[projectName]/sessions/[sessionId]	チャット履歴表示	選択されたセッションのメッセージ履歴を表示する
+/projects/[projectName]/sessions/[sessionId]	メッセージ送信	新しいメッセージを送信する
+/projects/[projectName]/sessions/[sessionId]	リアルタイム表示	新規メッセージをリアルタイムで表示更新する
+/projects/[projectName]/sessions/[sessionId]	既存セッション連携	既存セッションに対してClaude Code SDKでメッセージを送信する
+/projects/[projectName]/sessions/[sessionId]	ストリーミング表示	Claude Code SDKからのストリーミングレスポンスを表示する
+/projects/[projectName]/sessions/new	新規セッション作成	新しいセッションを作成してメッセージ送信を開始する
+/projects/[projectName]/sessions/new	ディレクトリ指定	実行ディレクトリを指定して新規セッションを作成する
+/*	モバイル対応表示	スマートフォン・タブレットに最適化されたレスポンシブデザイン表示
+/*	ナビゲーション	プロジェクト → セッション → チャットルームの階層ナビゲーション
+/*	ユーザーメッセージ表示	ユーザーが送信したメッセージの表示
+/*	アシスタントメッセージ表示	Claude Codeが返したメッセージの表示
+/*	タイムスタンプ表示	各メッセージの送信時刻を表示
+/*	システムログ表示	システムレベルのログメッセージを表示
+/*	ツール実行結果表示	Tool使用の結果を適切に表示
+/*	エラーメッセージ表示	パースエラーや通信エラー等のエラーメッセージを表示

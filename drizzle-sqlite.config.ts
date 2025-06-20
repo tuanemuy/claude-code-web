@@ -1,4 +1,5 @@
 import "dotenv/config";
+import path from "node:path";
 import { defineConfig } from "drizzle-kit";
 
 const fileName = process.env.DATABASE_FILE_NAME;

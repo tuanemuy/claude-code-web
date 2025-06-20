@@ -8,6 +8,14 @@ export class AnyError extends Error {
   }
 }
 
+export class RepositoryError extends AnyError {
+  override readonly name: string = "RepositoryError";
+}
+
+export class ApplicationError extends AnyError {
+  override readonly name: string = "ApplicationError";
+}
+
 export function isError(error: unknown): error is AnyError | Error {
   return error instanceof Error || error instanceof AnyError;
 }

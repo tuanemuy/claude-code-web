@@ -1,0 +1,3050 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LogEntry",
+  "description": "Log entry schema for summary, user, and assistant logs",
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "SummaryLog",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "summary"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "leafUuid": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "summary", "leafUuid"],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "title": "UserLog",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LogEntryBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "user"
+            },
+            "message": {
+              "$ref": "#/definitions/UserMessage"
+            },
+            "isMeta": {
+              "type": "boolean"
+            },
+            "toolUseResult": {
+              "$ref": "#/definitions/ToolUseResult"
+            }
+          },
+          "required": ["type", "message"]
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "title": "AssistantLog",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LogEntryBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "assistant"
+            },
+            "message": {
+              "$ref": "#/definitions/AssistantMessage"
+            },
+            "requestId": {
+              "type": "string"
+            },
+            "isApiErrorMessage": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "message"]
+        }
+      ]
+    },
+    {
+      "type": "object",
+      "title": "SystemLog",
+      "allOf": [
+        {
+          "$ref": "#/definitions/LogEntryBase"
+        },
+        {
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "system"
+            },
+            "content": {
+              "type": "string"
+            },
+            "level": {
+              "type": "string",
+              "enum": ["info", "warning", "error", "debug"]
+            },
+            "isMeta": {
+              "type": "boolean"
+            }
+          },
+          "required": ["type", "content"]
+        }
+      ]
+    }
+  ],
+  "definitions": {
+    "LogEntryBase": {
+      "type": "object",
+      "properties": {
+        "uuid": {
+          "type": "string"
+        },
+        "parentUuid": {
+          "type": ["string", "null"]
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "isSidechain": {
+          "type": "boolean"
+        },
+        "userType": {
+          "type": "string",
+          "const": "external"
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "uuid",
+        "parentUuid",
+        "timestamp",
+        "isSidechain",
+        "userType",
+        "cwd",
+        "sessionId",
+        "version"
+      ]
+    },
+    "UserMessage": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "const": "user"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MessageContent"
+              }
+            }
+          ]
+        }
+      },
+      "required": ["role", "content"],
+      "additionalProperties": false
+    },
+    "AssistantMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "message"
+        },
+        "role": {
+          "type": "string",
+          "const": "assistant"
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "claude-3-7-sonnet-latest",
+            "claude-3-7-sonnet-20250219",
+            "claude-3-5-haiku-latest",
+            "claude-3-5-haiku-20241022",
+            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-0",
+            "claude-4-sonnet-20250514",
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-opus-4-0",
+            "claude-opus-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-3-opus-latest",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+            "claude-2.1",
+            "claude-2.0",
+            "<synthetic>"
+          ]
+        },
+        "content": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/TextContent"
+              },
+              {
+                "$ref": "#/definitions/ToolUseContent"
+              },
+              {
+                "$ref": "#/definitions/ThinkingContent"
+              },
+              {
+                "$ref": "#/definitions/RedactedThinkingContent"
+              },
+              {
+                "$ref": "#/definitions/ServerToolUseContent"
+              },
+              {
+                "$ref": "#/definitions/WebSearchToolResultContent"
+              }
+            ]
+          }
+        },
+        "stop_reason": {
+          "type": ["string", "null"]
+        },
+        "stop_sequence": {
+          "type": ["string", "null"]
+        },
+        "usage": {
+          "$ref": "#/definitions/Usage"
+        }
+      },
+      "required": ["id", "type", "role", "content"],
+      "additionalProperties": false
+    },
+    "Usage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": "number"
+        },
+        "cache_creation_input_tokens": {
+          "type": ["number", "null"]
+        },
+        "cache_read_input_tokens": {
+          "type": ["number", "null"]
+        },
+        "output_tokens": {
+          "type": "number"
+        },
+        "service_tier": {
+          "type": ["string", "null"],
+          "enum": ["standard", "priority", "batch", null]
+        },
+        "server_tool_use": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ServerToolUsage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input_tokens",
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+        "output_tokens"
+      ],
+      "additionalProperties": false
+    },
+    "ToolUseResult": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "stdout": {
+              "type": "string"
+            },
+            "stderr": {
+              "type": "string"
+            },
+            "interrupted": {
+              "type": "boolean"
+            },
+            "isImage": {
+              "type": "boolean"
+            },
+            "sandbox": {
+              "type": "boolean"
+            },
+            "returnCodeInterpretation": {
+              "type": "string"
+            }
+          },
+          "required": ["stdout", "stderr", "interrupted", "isImage"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "file": {
+              "type": "object",
+              "properties": {
+                "filePath": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                },
+                "numLines": {
+                  "type": "number"
+                },
+                "startLine": {
+                  "type": "number"
+                },
+                "totalLines": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "filePath",
+                "content",
+                "numLines",
+                "startLine",
+                "totalLines"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "file"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string"
+            },
+            "oldString": {
+              "type": "string"
+            },
+            "newString": {
+              "type": "string"
+            },
+            "originalFile": {
+              "type": "string"
+            },
+            "structuredPatch": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "oldStart": {
+                    "type": "number"
+                  },
+                  "oldLines": {
+                    "type": "number"
+                  },
+                  "newStart": {
+                    "type": "number"
+                  },
+                  "newLines": {
+                    "type": "number"
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "userModified": {
+              "type": "boolean"
+            },
+            "replaceAll": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "oldTodos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "in_progress", "completed"]
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": ["high", "medium", "low"]
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "newTodos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "in_progress", "completed"]
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": ["high", "medium", "low"]
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filePath": {
+              "type": "string"
+            },
+            "edits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "old_string": {
+                    "type": "string"
+                  },
+                  "new_string": {
+                    "type": "string"
+                  },
+                  "replace_all": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "originalFileContents": {
+              "type": "string"
+            },
+            "structuredPatch": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "oldStart": {
+                    "type": "number"
+                  },
+                  "oldLines": {
+                    "type": "number"
+                  },
+                  "newStart": {
+                    "type": "number"
+                  },
+                  "newLines": {
+                    "type": "number"
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "userModified": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filenames": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "numFiles": {
+              "type": "number"
+            },
+            "durationMs": {
+              "type": "number"
+            },
+            "truncated": {
+              "type": "boolean"
+            }
+          },
+          "required": ["filenames", "numFiles"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            },
+            "structuredPatch": {
+              "type": "array"
+            }
+          },
+          "required": ["type", "filePath", "content"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "totalDurationMs": {
+              "type": "number"
+            },
+            "totalTokens": {
+              "type": "number"
+            },
+            "totalToolUseCount": {
+              "type": "number"
+            },
+            "usage": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "wasInterrupted": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "cell": {
+                "type": "number"
+              },
+              "cellType": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "language": {
+                "type": "string"
+              },
+              "execution_count": {
+                "type": ["number", "null"]
+              }
+            },
+            "required": ["cell"],
+            "additionalProperties": true
+          }
+        },
+        {
+          "type": "object",
+          "properties": {
+            "cell_number": {
+              "type": "number"
+            },
+            "new_source": {
+              "type": "string"
+            },
+            "cell_type": {
+              "type": "string"
+            },
+            "language": {
+              "type": "string"
+            },
+            "edit_mode": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            },
+            "cell_id": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "bytes": {
+              "type": "number"
+            },
+            "code": {
+              "type": "number"
+            },
+            "codeText": {
+              "type": "string"
+            },
+            "result": {
+              "type": "string"
+            },
+            "durationMs": {
+              "type": "number"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "bytes",
+            "code",
+            "codeText",
+            "result",
+            "durationMs",
+            "url"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "array",
+          "maxItems": 0
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "in_progress", "completed"]
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              },
+              "id": {
+                "type": "string"
+              }
+            },
+            "required": ["content", "status", "priority", "id"],
+            "additionalProperties": false
+          }
+        }
+      ]
+    },
+    "MessageContent": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/TextContent"
+        },
+        {
+          "$ref": "#/definitions/ToolUseContent"
+        },
+        {
+          "$ref": "#/definitions/ToolResultContent"
+        },
+        {
+          "$ref": "#/definitions/ImageContent"
+        },
+        {
+          "$ref": "#/definitions/DocumentContent"
+        },
+        {
+          "$ref": "#/definitions/WebSearchToolResultContent"
+        }
+      ]
+    },
+    "TextContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text"
+        },
+        "text": {
+          "type": "string"
+        },
+        "citations": {
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/Citation"
+          }
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "ToolUseContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tool_use"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "input": {
+          "$ref": "#/definitions/ToolInput"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "id", "name", "input"],
+      "additionalProperties": false
+    },
+    "ToolResultContent": {
+      "type": "object",
+      "properties": {
+        "tool_use_id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "tool_result"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/TextContent"
+                  },
+                  {
+                    "$ref": "#/definitions/ImageContent"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "is_error": {
+          "type": "boolean"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["tool_use_id", "type"],
+      "additionalProperties": false
+    },
+    "ToolInput": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BashToolInput"
+        },
+        {
+          "$ref": "#/definitions/ReadToolInput"
+        },
+        {
+          "$ref": "#/definitions/LSToolInput"
+        },
+        {
+          "$ref": "#/definitions/EditToolInput"
+        },
+        {
+          "$ref": "#/definitions/WriteToolInput"
+        },
+        {
+          "$ref": "#/definitions/GrepToolInput"
+        },
+        {
+          "$ref": "#/definitions/GlobToolInput"
+        },
+        {
+          "$ref": "#/definitions/MultiEditToolInput"
+        },
+        {
+          "$ref": "#/definitions/NotebookReadToolInput"
+        },
+        {
+          "$ref": "#/definitions/NotebookEditToolInput"
+        },
+        {
+          "$ref": "#/definitions/WebFetchToolInput"
+        },
+        {
+          "$ref": "#/definitions/WebSearchToolInput"
+        },
+        {
+          "$ref": "#/definitions/TodoReadToolInput"
+        },
+        {
+          "$ref": "#/definitions/TodoWriteToolInput"
+        },
+        {
+          "$ref": "#/definitions/TaskToolInput"
+        },
+        {
+          "$ref": "#/definitions/ExitPlanModeToolInput"
+        },
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
+    },
+    "BashToolInput": {
+      "type": "object",
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "number"
+        }
+      },
+      "required": ["command"],
+      "additionalProperties": false
+    },
+    "ReadToolInput": {
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string"
+        },
+        "limit": {
+          "type": "number"
+        },
+        "offset": {
+          "type": "number"
+        },
+        "pattern": {
+          "type": "string"
+        }
+      },
+      "required": ["file_path"],
+      "additionalProperties": false
+    },
+    "LSToolInput": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false
+    },
+    "EditToolInput": {
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string"
+        },
+        "old_string": {
+          "type": "string"
+        },
+        "new_string": {
+          "type": "string"
+        },
+        "replace_all": {
+          "type": "boolean"
+        }
+      },
+      "required": ["file_path", "old_string", "new_string"],
+      "additionalProperties": false
+    },
+    "WriteToolInput": {
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "required": ["file_path", "content"],
+      "additionalProperties": false
+    },
+    "GrepToolInput": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "include": {
+          "type": "string"
+        }
+      },
+      "required": ["pattern"],
+      "additionalProperties": false
+    },
+    "GlobToolInput": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": ["pattern"],
+      "additionalProperties": false
+    },
+    "MultiEditToolInput": {
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string"
+        },
+        "edits": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "old_string": {
+                    "type": "string"
+                  },
+                  "new_string": {
+                    "type": "string"
+                  },
+                  "replace_all": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["old_string", "new_string"],
+                "additionalProperties": false
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "required": ["file_path", "edits"],
+      "additionalProperties": false
+    },
+    "NotebookReadToolInput": {
+      "type": "object",
+      "properties": {
+        "notebook_path": {
+          "type": "string"
+        }
+      },
+      "required": ["notebook_path"],
+      "additionalProperties": false
+    },
+    "NotebookEditToolInput": {
+      "type": "object",
+      "properties": {
+        "notebook_path": {
+          "type": "string"
+        },
+        "cell_number": {
+          "type": "number"
+        },
+        "new_source": {
+          "type": "string"
+        },
+        "cell_type": {
+          "type": "string",
+          "enum": ["code", "markdown"]
+        },
+        "edit_mode": {
+          "type": "string",
+          "enum": ["replace", "insert", "delete"]
+        }
+      },
+      "required": ["notebook_path", "cell_number", "new_source"],
+      "additionalProperties": false
+    },
+    "WebFetchToolInput": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      },
+      "required": ["url", "prompt"],
+      "additionalProperties": false
+    },
+    "WebSearchToolInput": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "allowed_domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocked_domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["query"],
+      "additionalProperties": false
+    },
+    "TodoReadToolInput": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "TodoWriteToolInput": {
+      "type": "object",
+      "properties": {
+        "todos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "in_progress", "completed"]
+              },
+              "priority": {
+                "type": "string",
+                "enum": ["high", "medium", "low"]
+              }
+            },
+            "required": ["id", "content", "status", "priority"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["todos"],
+      "additionalProperties": false
+    },
+    "TaskToolInput": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "prompt": {
+          "type": "string"
+        }
+      },
+      "required": ["description", "prompt"],
+      "additionalProperties": false
+    },
+    "ImageContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Base64ImageSource"
+            },
+            {
+              "$ref": "#/definitions/URLImageSource"
+            }
+          ]
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "source"],
+      "additionalProperties": false
+    },
+    "DocumentContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "document"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Base64PDFSource"
+            },
+            {
+              "$ref": "#/definitions/URLPDFSource"
+            },
+            {
+              "$ref": "#/definitions/PlainTextSource"
+            },
+            {
+              "$ref": "#/definitions/ContentBlockSource"
+            }
+          ]
+        },
+        "title": {
+          "type": ["string", "null"]
+        },
+        "context": {
+          "type": ["string", "null"]
+        },
+        "citations": {
+          "$ref": "#/definitions/CitationsConfig"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "source"],
+      "additionalProperties": false
+    },
+    "ContentBlockSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/TextContent"
+                  },
+                  {
+                    "$ref": "#/definitions/ImageContent"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "required": ["type", "content"],
+      "additionalProperties": false
+    },
+    "CitationsConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "CacheControlEphemeral": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "ephemeral"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "WebSearchToolResultContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_tool_result"
+        },
+        "tool_use_id": {
+          "type": "string"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WebSearchResultBlock"
+              }
+            },
+            {
+              "$ref": "#/definitions/WebSearchToolRequestError"
+            }
+          ]
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "tool_use_id", "content"],
+      "additionalProperties": false
+    },
+    "WebSearchResultBlock": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_result"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "encrypted_content": {
+          "type": "string"
+        },
+        "page_age": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["type", "title", "url", "encrypted_content"],
+      "additionalProperties": false
+    },
+    "WebSearchToolRequestError": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_tool_result_error"
+        },
+        "error_code": {
+          "type": "string",
+          "enum": [
+            "invalid_tool_input",
+            "unavailable",
+            "max_uses_exceeded",
+            "too_many_requests",
+            "query_too_long"
+          ]
+        }
+      },
+      "required": ["type", "error_code"],
+      "additionalProperties": false
+    },
+    "ThinkingContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "thinking"
+        },
+        "thinking": {
+          "type": "string"
+        },
+        "signature": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "thinking", "signature"],
+      "additionalProperties": false
+    },
+    "ServerToolUseContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "server_tool_use"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "const": "web_search"
+        },
+        "input": {
+          "type": "object"
+        }
+      },
+      "required": ["type", "id", "name", "input"],
+      "additionalProperties": false
+    },
+    "Base64ImageSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "base64"
+        },
+        "media_type": {
+          "type": "string",
+          "enum": ["image/jpeg", "image/png", "image/gif", "image/webp"]
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "media_type", "data"],
+      "additionalProperties": false
+    },
+    "URLImageSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "url"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "url"],
+      "additionalProperties": false
+    },
+    "Base64PDFSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "base64"
+        },
+        "media_type": {
+          "type": "string",
+          "const": "application/pdf"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "media_type", "data"],
+      "additionalProperties": false
+    },
+    "URLPDFSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "url"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "url"],
+      "additionalProperties": false
+    },
+    "PlainTextSource": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text"
+        },
+        "media_type": {
+          "type": "string",
+          "const": "text/plain"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "media_type", "data"],
+      "additionalProperties": false
+    },
+    "ExitPlanModeToolInput": {
+      "type": "object",
+      "properties": {
+        "plan": {
+          "type": "string"
+        }
+      },
+      "required": ["plan"],
+      "additionalProperties": false
+    },
+    "RedactedThinkingContent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "redacted_thinking"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "data"],
+      "additionalProperties": false
+    },
+    "ServerToolUsage": {
+      "type": "object",
+      "properties": {
+        "web_search_requests": {
+          "type": "number"
+        }
+      },
+      "required": ["web_search_requests"],
+      "additionalProperties": false
+    },
+    "Citation": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CitationCharLocation"
+        },
+        {
+          "$ref": "#/definitions/CitationPageLocation"
+        },
+        {
+          "$ref": "#/definitions/CitationContentBlockLocation"
+        },
+        {
+          "$ref": "#/definitions/CitationWebSearchResultLocation"
+        }
+      ]
+    },
+    "CitationCharLocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "char_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_char_index": {
+          "type": "number"
+        },
+        "end_char_index": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_char_index",
+        "end_char_index"
+      ],
+      "additionalProperties": false
+    },
+    "CitationPageLocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "page_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_page_number": {
+          "type": "number"
+        },
+        "end_page_number": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_page_number",
+        "end_page_number"
+      ],
+      "additionalProperties": false
+    },
+    "CitationContentBlockLocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content_block_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_block_index": {
+          "type": "number"
+        },
+        "end_block_index": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_block_index",
+        "end_block_index"
+      ],
+      "additionalProperties": false
+    },
+    "CitationWebSearchResultLocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_result_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "encrypted_index": {
+          "type": "string"
+        },
+        "title": {
+          "type": ["string", "null"]
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "cited_text", "encrypted_index", "title", "url"],
+      "additionalProperties": false
+    },
+    "CitationCharLocationParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "char_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_char_index": {
+          "type": "number"
+        },
+        "end_char_index": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_char_index",
+        "end_char_index"
+      ],
+      "additionalProperties": false
+    },
+    "CitationPageLocationParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "page_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_page_number": {
+          "type": "number"
+        },
+        "end_page_number": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_page_number",
+        "end_page_number"
+      ],
+      "additionalProperties": false
+    },
+    "CitationContentBlockLocationParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content_block_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "document_index": {
+          "type": "number"
+        },
+        "document_title": {
+          "type": ["string", "null"]
+        },
+        "start_block_index": {
+          "type": "number"
+        },
+        "end_block_index": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "type",
+        "cited_text",
+        "document_index",
+        "document_title",
+        "start_block_index",
+        "end_block_index"
+      ],
+      "additionalProperties": false
+    },
+    "CitationWebSearchResultLocationParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_result_location"
+        },
+        "cited_text": {
+          "type": "string"
+        },
+        "encrypted_index": {
+          "type": "string"
+        },
+        "title": {
+          "type": ["string", "null"]
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "cited_text", "encrypted_index", "title", "url"],
+      "additionalProperties": false
+    },
+    "Tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "input_schema": {
+          "$ref": "#/definitions/ToolInputSchema"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["custom", null]
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["name", "input_schema"],
+      "additionalProperties": false
+    },
+    "ToolInputSchema": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "object"
+        },
+        "properties": {
+          "type": "object"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": true
+    },
+    "ToolBash20250124": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "bash"
+        },
+        "type": {
+          "type": "string",
+          "const": "bash_20250124"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+    "ToolTextEditor20250124": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "str_replace_editor"
+        },
+        "type": {
+          "type": "string",
+          "const": "text_editor_20250124"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+    "ToolTextEditor20250429": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "str_replace_based_edit_tool"
+        },
+        "type": {
+          "type": "string",
+          "const": "text_editor_20250429"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+    "WebSearchTool20250305": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "web_search"
+        },
+        "type": {
+          "type": "string",
+          "const": "web_search_20250305"
+        },
+        "allowed_domains": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocked_domains": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "string"
+          }
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "max_uses": {
+          "type": ["number", "null"]
+        },
+        "user_location": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UserLocation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+    "UserLocation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "approximate"
+        },
+        "city": {
+          "type": ["string", "null"]
+        },
+        "country": {
+          "type": ["string", "null"]
+        },
+        "region": {
+          "type": ["string", "null"]
+        },
+        "timezone": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "ToolChoice": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ToolChoiceAuto"
+        },
+        {
+          "$ref": "#/definitions/ToolChoiceAny"
+        },
+        {
+          "$ref": "#/definitions/ToolChoiceTool"
+        },
+        {
+          "$ref": "#/definitions/ToolChoiceNone"
+        }
+      ]
+    },
+    "ToolChoiceAuto": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "auto"
+        },
+        "disable_parallel_tool_use": {
+          "type": "boolean"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "ToolChoiceAny": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "any"
+        },
+        "disable_parallel_tool_use": {
+          "type": "boolean"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "ToolChoiceTool": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tool"
+        },
+        "name": {
+          "type": "string"
+        },
+        "disable_parallel_tool_use": {
+          "type": "boolean"
+        }
+      },
+      "required": ["type", "name"],
+      "additionalProperties": false
+    },
+    "ToolChoiceNone": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "none"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "Metadata": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ThinkingConfigParam": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ThinkingConfigEnabled"
+        },
+        {
+          "$ref": "#/definitions/ThinkingConfigDisabled"
+        }
+      ]
+    },
+    "ThinkingConfigEnabled": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "enabled"
+        },
+        "budget_tokens": {
+          "type": "number"
+        }
+      },
+      "required": ["type", "budget_tokens"],
+      "additionalProperties": false
+    },
+    "ThinkingConfigDisabled": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "disabled"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "TextDelta": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text_delta"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "InputJSONDelta": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "input_json_delta"
+        },
+        "partial_json": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "partial_json"],
+      "additionalProperties": false
+    },
+    "CitationsDelta": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "citations_delta"
+        },
+        "citation": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/CitationCharLocation"
+            },
+            {
+              "$ref": "#/definitions/CitationPageLocation"
+            },
+            {
+              "$ref": "#/definitions/CitationContentBlockLocation"
+            },
+            {
+              "$ref": "#/definitions/CitationWebSearchResultLocation"
+            }
+          ]
+        }
+      },
+      "required": ["type", "citation"],
+      "additionalProperties": false
+    },
+    "ThinkingDelta": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "thinking_delta"
+        },
+        "thinking": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "thinking"],
+      "additionalProperties": false
+    },
+    "SignatureDelta": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "signature_delta"
+        },
+        "signature": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "signature"],
+      "additionalProperties": false
+    },
+    "RawContentBlockDelta": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/TextDelta"
+        },
+        {
+          "$ref": "#/definitions/InputJSONDelta"
+        },
+        {
+          "$ref": "#/definitions/CitationsDelta"
+        },
+        {
+          "$ref": "#/definitions/ThinkingDelta"
+        },
+        {
+          "$ref": "#/definitions/SignatureDelta"
+        }
+      ]
+    },
+    "RawContentBlockDeltaEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content_block_delta"
+        },
+        "index": {
+          "type": "number"
+        },
+        "delta": {
+          "$ref": "#/definitions/RawContentBlockDelta"
+        }
+      },
+      "required": ["type", "index", "delta"],
+      "additionalProperties": false
+    },
+    "RawContentBlockStartEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content_block_start"
+        },
+        "index": {
+          "type": "number"
+        },
+        "content_block": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/TextContent"
+            },
+            {
+              "$ref": "#/definitions/ToolUseContent"
+            },
+            {
+              "$ref": "#/definitions/ServerToolUseContent"
+            },
+            {
+              "$ref": "#/definitions/WebSearchToolResultContent"
+            },
+            {
+              "$ref": "#/definitions/ThinkingContent"
+            },
+            {
+              "$ref": "#/definitions/RedactedThinkingContent"
+            }
+          ]
+        }
+      },
+      "required": ["type", "index", "content_block"],
+      "additionalProperties": false
+    },
+    "RawContentBlockStopEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "content_block_stop"
+        },
+        "index": {
+          "type": "number"
+        }
+      },
+      "required": ["type", "index"],
+      "additionalProperties": false
+    },
+    "MessageDeltaUsage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": ["number", "null"]
+        },
+        "cache_creation_input_tokens": {
+          "type": ["number", "null"]
+        },
+        "cache_read_input_tokens": {
+          "type": ["number", "null"]
+        },
+        "output_tokens": {
+          "type": "number"
+        },
+        "server_tool_use": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ServerToolUsage"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "cache_creation_input_tokens",
+        "cache_read_input_tokens",
+        "input_tokens",
+        "output_tokens",
+        "server_tool_use"
+      ],
+      "additionalProperties": false
+    },
+    "RawMessageDeltaEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "message_delta"
+        },
+        "delta": {
+          "type": "object",
+          "properties": {
+            "stop_reason": {
+              "type": ["string", "null"],
+              "enum": [
+                "end_turn",
+                "max_tokens",
+                "stop_sequence",
+                "tool_use",
+                "pause_turn",
+                "refusal",
+                null
+              ]
+            },
+            "stop_sequence": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["stop_reason", "stop_sequence"],
+          "additionalProperties": false
+        },
+        "usage": {
+          "$ref": "#/definitions/MessageDeltaUsage"
+        }
+      },
+      "required": ["type", "delta", "usage"],
+      "additionalProperties": false
+    },
+    "RawMessageStartEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "message_start"
+        },
+        "message": {
+          "$ref": "#/definitions/AssistantMessage"
+        }
+      },
+      "required": ["type", "message"],
+      "additionalProperties": false
+    },
+    "RawMessageStopEvent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "message_stop"
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "RawMessageStreamEvent": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/RawMessageStartEvent"
+        },
+        {
+          "$ref": "#/definitions/RawMessageDeltaEvent"
+        },
+        {
+          "$ref": "#/definitions/RawMessageStopEvent"
+        },
+        {
+          "$ref": "#/definitions/RawContentBlockStartEvent"
+        },
+        {
+          "$ref": "#/definitions/RawContentBlockDeltaEvent"
+        },
+        {
+          "$ref": "#/definitions/RawContentBlockStopEvent"
+        }
+      ]
+    },
+    "MessageTokensCount": {
+      "type": "object",
+      "properties": {
+        "input_tokens": {
+          "type": "number"
+        }
+      },
+      "required": ["input_tokens"],
+      "additionalProperties": false
+    },
+    "MessageCreateParamsBase": {
+      "type": "object",
+      "properties": {
+        "max_tokens": {
+          "type": "number"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MessageParam"
+          }
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "claude-3-7-sonnet-latest",
+            "claude-3-7-sonnet-20250219",
+            "claude-3-5-haiku-latest",
+            "claude-3-5-haiku-20241022",
+            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-0",
+            "claude-4-sonnet-20250514",
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-opus-4-0",
+            "claude-opus-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-3-opus-latest",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+            "claude-2.1",
+            "claude-2.0"
+          ]
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "service_tier": {
+          "type": "string",
+          "enum": ["auto", "standard_only"]
+        },
+        "stop_sequences": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stream": {
+          "type": "boolean"
+        },
+        "system": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TextContent"
+              }
+            }
+          ]
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "thinking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ThinkingConfigParam"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ToolUnion"
+          }
+        },
+        "top_k": {
+          "type": "number"
+        },
+        "top_p": {
+          "type": "number"
+        }
+      },
+      "required": ["max_tokens", "messages", "model"],
+      "additionalProperties": false
+    },
+    "MessageCreateParamsNonStreaming": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/MessageCreateParamsBase"
+        },
+        {
+          "properties": {
+            "stream": {
+              "type": "boolean",
+              "const": false
+            }
+          }
+        }
+      ]
+    },
+    "MessageCreateParamsStreaming": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/MessageCreateParamsBase"
+        },
+        {
+          "properties": {
+            "stream": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": ["stream"]
+        }
+      ]
+    },
+    "MessageCreateParams": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/MessageCreateParamsNonStreaming"
+        },
+        {
+          "$ref": "#/definitions/MessageCreateParamsStreaming"
+        }
+      ]
+    },
+    "MessageCountTokensParams": {
+      "type": "object",
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MessageParam"
+          }
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "claude-3-7-sonnet-latest",
+            "claude-3-7-sonnet-20250219",
+            "claude-3-5-haiku-latest",
+            "claude-3-5-haiku-20241022",
+            "claude-sonnet-4-20250514",
+            "claude-sonnet-4-0",
+            "claude-4-sonnet-20250514",
+            "claude-3-5-sonnet-latest",
+            "claude-3-5-sonnet-20241022",
+            "claude-3-5-sonnet-20240620",
+            "claude-opus-4-0",
+            "claude-opus-4-20250514",
+            "claude-4-opus-20250514",
+            "claude-3-opus-latest",
+            "claude-3-opus-20240229",
+            "claude-3-sonnet-20240229",
+            "claude-3-haiku-20240307",
+            "claude-2.1",
+            "claude-2.0"
+          ]
+        },
+        "system": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TextContent"
+              }
+            }
+          ]
+        },
+        "thinking": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ThinkingConfigParam"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MessageCountTokensTool"
+          }
+        }
+      },
+      "required": ["messages", "model"],
+      "additionalProperties": false
+    },
+    "MessageCountTokensTool": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Tool"
+        },
+        {
+          "$ref": "#/definitions/ToolBash20250124"
+        },
+        {
+          "$ref": "#/definitions/ToolTextEditor20250124"
+        },
+        {
+          "$ref": "#/definitions/ToolTextEditor20250429"
+        },
+        {
+          "$ref": "#/definitions/WebSearchTool20250305"
+        }
+      ]
+    },
+    "ToolUnion": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Tool"
+        },
+        {
+          "$ref": "#/definitions/ToolBash20250124"
+        },
+        {
+          "$ref": "#/definitions/ToolTextEditor20250124"
+        },
+        {
+          "$ref": "#/definitions/ToolTextEditor20250429"
+        },
+        {
+          "$ref": "#/definitions/WebSearchTool20250305"
+        }
+      ]
+    },
+    "MessageParam": {
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "assistant"]
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ContentBlockParam"
+              }
+            }
+          ]
+        }
+      },
+      "required": ["role", "content"],
+      "additionalProperties": false
+    },
+    "ContentBlockParam": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/ServerToolUseBlockParam"
+        },
+        {
+          "$ref": "#/definitions/WebSearchToolResultBlockParam"
+        },
+        {
+          "$ref": "#/definitions/TextBlockParam"
+        },
+        {
+          "$ref": "#/definitions/ImageBlockParam"
+        },
+        {
+          "$ref": "#/definitions/ToolUseBlockParam"
+        },
+        {
+          "$ref": "#/definitions/ToolResultBlockParam"
+        },
+        {
+          "$ref": "#/definitions/DocumentBlockParam"
+        },
+        {
+          "$ref": "#/definitions/ThinkingBlockParam"
+        },
+        {
+          "$ref": "#/definitions/RedactedThinkingBlockParam"
+        }
+      ]
+    },
+    "ServerToolUseBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "server_tool_use"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "const": "web_search"
+        },
+        "input": {
+          "type": "object"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "id", "name", "input"],
+      "additionalProperties": false
+    },
+    "WebSearchToolResultBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_tool_result"
+        },
+        "tool_use_id": {
+          "type": "string"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WebSearchResultBlockParam"
+              }
+            },
+            {
+              "$ref": "#/definitions/WebSearchToolRequestError"
+            }
+          ]
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "tool_use_id", "content"],
+      "additionalProperties": false
+    },
+    "WebSearchResultBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "web_search_result"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "encrypted_content": {
+          "type": "string"
+        },
+        "page_age": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["type", "title", "url", "encrypted_content"],
+      "additionalProperties": false
+    },
+    "TextBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text"
+        },
+        "text": {
+          "type": "string"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "citations": {
+          "type": ["array", "null"],
+          "items": {
+            "$ref": "#/definitions/TextCitationParam"
+          }
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "TextCitationParam": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/CitationCharLocationParam"
+        },
+        {
+          "$ref": "#/definitions/CitationPageLocationParam"
+        },
+        {
+          "$ref": "#/definitions/CitationContentBlockLocationParam"
+        },
+        {
+          "$ref": "#/definitions/CitationWebSearchResultLocationParam"
+        }
+      ]
+    },
+    "ImageBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Base64ImageSource"
+            },
+            {
+              "$ref": "#/definitions/URLImageSource"
+            }
+          ]
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "source"],
+      "additionalProperties": false
+    },
+    "ToolUseBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tool_use"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "id", "name", "input"],
+      "additionalProperties": false
+    },
+    "ToolResultBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tool_result"
+        },
+        "tool_use_id": {
+          "type": "string"
+        },
+        "content": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/TextBlockParam"
+                  },
+                  {
+                    "$ref": "#/definitions/ImageBlockParam"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "is_error": {
+          "type": "boolean"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "tool_use_id"],
+      "additionalProperties": false
+    },
+    "DocumentBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "document"
+        },
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Base64PDFSource"
+            },
+            {
+              "$ref": "#/definitions/URLPDFSource"
+            },
+            {
+              "$ref": "#/definitions/PlainTextSource"
+            },
+            {
+              "$ref": "#/definitions/ContentBlockSource"
+            }
+          ]
+        },
+        "title": {
+          "type": ["string", "null"]
+        },
+        "context": {
+          "type": ["string", "null"]
+        },
+        "citations": {
+          "$ref": "#/definitions/CitationsConfigParam"
+        },
+        "cache_control": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CacheControlEphemeral"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": ["type", "source"],
+      "additionalProperties": false
+    },
+    "CitationsConfigParam": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ThinkingBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "thinking"
+        },
+        "thinking": {
+          "type": "string"
+        },
+        "signature": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "thinking", "signature"],
+      "additionalProperties": false
+    },
+    "RedactedThinkingBlockParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "redacted_thinking"
+        },
+        "data": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "data"],
+      "additionalProperties": false
+    }
+  }
+}
