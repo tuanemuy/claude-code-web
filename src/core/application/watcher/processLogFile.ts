@@ -361,12 +361,35 @@ async function processMessageEntry(
   let content: string | null = null;
 
   if (entry.type === "user" && entry.message?.content) {
-    content =
+    // Use claude service to parse user content
+    const parseResult = context.claudeService.parseUserContent(
       typeof entry.message.content === "string"
         ? entry.message.content
-        : JSON.stringify(entry.message.content);
+        : JSON.stringify(entry.message.content),
+    );
+    if (parseResult.isOk()) {
+      content =
+        typeof parseResult.value === "string"
+          ? parseResult.value
+          : JSON.stringify(parseResult.value);
+    } else {
+      // Fallback to raw content if parsing fails
+      content =
+        typeof entry.message.content === "string"
+          ? entry.message.content
+          : JSON.stringify(entry.message.content);
+    }
   } else if (entry.type === "assistant" && entry.message?.content) {
-    content = JSON.stringify(entry.message.content);
+    // Use claude service to parse assistant content
+    const parseResult = context.claudeService.parseAssistantContent(
+      JSON.stringify(entry.message.content),
+    );
+    if (parseResult.isOk()) {
+      content = JSON.stringify(parseResult.value);
+    } else {
+      // Fallback to raw content if parsing fails
+      content = JSON.stringify(entry.message.content);
+    }
   }
 
   if (!entry.message?.role) {

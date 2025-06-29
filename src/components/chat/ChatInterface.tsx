@@ -12,6 +12,13 @@ import { detectPermissionError } from "@/core/application/authorization/detectPe
 import { formatAllowedTool } from "@/core/application/authorization/formatAllowedTool";
 import type { PermissionRequest } from "@/core/domain/authorization/types";
 import type { Message } from "@/core/domain/message/types";
+import {
+  isAssistantMessage,
+  isResultMessage,
+  isSystemMessage,
+  isUserMessage,
+  parseSDKMessage,
+} from "@/lib/claude";
 import { formatTime } from "@/lib/date";
 import { MessageContent } from "./MessageContent";
 import { PermissionDialog } from "./PermissionDialog";
@@ -175,13 +182,18 @@ export function ChatInterface({
 
           if (data.type === "chunk") {
             // data.content is now an SDKMessage object
-            const sdkMessage = data.content;
+            const sdkMessage = parseSDKMessage(data.content);
+
+            if (!sdkMessage) {
+              console.warn("Failed to parse SDK message:", data.content);
+              return;
+            }
 
             setMessages((prev) => {
               let newMessage: ChatMessage;
 
-              // Handle different SDKMessage types
-              if (sdkMessage.type === "assistant" && sdkMessage.message) {
+              // Handle different SDKMessage types using type guards
+              if (isAssistantMessage(sdkMessage)) {
                 newMessage = {
                   id: `msg-${Date.now()}-${Math.random()}`,
                   role: "assistant",
@@ -189,7 +201,7 @@ export function ChatInterface({
                   timestamp: new Date(),
                   isStreaming: false,
                 };
-              } else if (sdkMessage.type === "user" && sdkMessage.message) {
+              } else if (isUserMessage(sdkMessage)) {
                 newMessage = {
                   id: `msg-${Date.now()}-${Math.random()}`,
                   role: "user",
@@ -197,10 +209,10 @@ export function ChatInterface({
                   timestamp: new Date(),
                   isStreaming: false,
                 };
-              } else if (sdkMessage.type === "system") {
+              } else if (isSystemMessage(sdkMessage)) {
                 // Handle system messages if needed
                 return prev;
-              } else if (sdkMessage.type === "result") {
+              } else if (isResultMessage(sdkMessage)) {
                 // Handle result messages if needed
                 return prev;
               } else {
@@ -210,41 +222,52 @@ export function ChatInterface({
 
               // Handle tool use content blocks within messages
               if (
-                sdkMessage.type === "assistant" &&
+                isAssistantMessage(sdkMessage) &&
                 sdkMessage.message?.content
               ) {
                 for (const contentBlock of sdkMessage.message.content) {
                   if (contentBlock.type === "tool_use") {
-                    pendingToolUsesRef.current.set(
-                      contentBlock.id,
-                      contentBlock,
-                    );
+                    pendingToolUsesRef.current.set(contentBlock.id, {
+                      id: contentBlock.id,
+                      name: contentBlock.name,
+                      input: contentBlock.input as Record<string, unknown>,
+                    });
                   }
                 }
               }
 
               // Handle tool results from user messages
-              if (sdkMessage.type === "user" && sdkMessage.message?.content) {
-                for (const contentBlock of sdkMessage.message.content) {
-                  if (contentBlock.type === "tool_result") {
-                    const pendingToolUse = pendingToolUsesRef.current.get(
-                      contentBlock.tool_use_id,
-                    );
-                    if (pendingToolUse) {
-                      const permissionResult = detectPermissionError(
-                        contentBlock,
-                        pendingToolUse,
+              if (isUserMessage(sdkMessage) && sdkMessage.message?.content) {
+                const content = sdkMessage.message.content;
+                // Only process if content is an array (content blocks)
+                if (Array.isArray(content)) {
+                  for (const contentBlock of content) {
+                    if (
+                      typeof contentBlock === "object" &&
+                      contentBlock !== null &&
+                      "type" in contentBlock &&
+                      contentBlock.type === "tool_result"
+                    ) {
+                      const toolResult = contentBlock as any; // Type assertion needed for tool_result
+                      const pendingToolUse = pendingToolUsesRef.current.get(
+                        toolResult.tool_use_id,
                       );
-                      if (permissionResult.isOk() && permissionResult.value) {
-                        setPermissionRequest(permissionResult.value);
-                        setShowPermissionDialog(true);
-                        eventSource.close();
-                        setIsLoading(false);
-                        return prev;
+                      if (pendingToolUse) {
+                        const permissionResult = detectPermissionError(
+                          toolResult,
+                          pendingToolUse,
+                        );
+                        if (permissionResult.isOk() && permissionResult.value) {
+                          setPermissionRequest(permissionResult.value);
+                          setShowPermissionDialog(true);
+                          eventSource.close();
+                          setIsLoading(false);
+                          return prev;
+                        }
+                        pendingToolUsesRef.current.delete(
+                          toolResult.tool_use_id,
+                        );
                       }
-                      pendingToolUsesRef.current.delete(
-                        contentBlock.tool_use_id,
-                      );
                     }
                   }
                 }

@@ -2,11 +2,15 @@ import { query } from "@anthropic-ai/claude-code";
 import { err, ok, type Result } from "neverthrow";
 import type { ClaudeService } from "@/core/domain/claude/ports/claudeService";
 import type {
+  AssistantContent,
   ChunkData,
   SDKMessage,
   SendMessageInput,
+  UserContent,
 } from "@/core/domain/claude/types";
 import { ClaudeError } from "@/lib/error";
+import { jsonValueSchema } from "@/lib/json";
+import { validate } from "@/lib/validation";
 
 export class AnthropicClaudeService implements ClaudeService {
   constructor(private readonly pathToClaudeCodeExecutable?: string) {}
@@ -65,5 +69,31 @@ export class AnthropicClaudeService implements ClaudeService {
         new ClaudeError("Failed to stream message from Claude", error),
       );
     }
+  }
+
+  parseAssistantContent(rawContent: string) {
+    const parsed = validate(jsonValueSchema, rawContent);
+    if (parsed.isErr()) {
+      return err(
+        new ClaudeError("Invalid assistant content format", parsed.error),
+      );
+    }
+    if (!Array.isArray(parsed.value)) {
+      return err(
+        new ClaudeError("Assistant content must be an array of messages"),
+      );
+    }
+    return ok(parsed.value as unknown as AssistantContent);
+  }
+
+  parseUserContent(rawContent: string) {
+    const parsed = validate(jsonValueSchema, rawContent);
+    if (parsed.isErr()) {
+      return err(new ClaudeError("Invalid user content format", parsed.error));
+    }
+    if (typeof parsed.value !== "string" && !Array.isArray(parsed.value)) {
+      return err(new ClaudeError("User content must be a string or array"));
+    }
+    return ok(parsed.value as unknown as UserContent);
   }
 }

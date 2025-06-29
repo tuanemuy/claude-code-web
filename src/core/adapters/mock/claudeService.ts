@@ -1,9 +1,11 @@
 import { err, ok, type Result } from "neverthrow";
 import type { ClaudeService } from "@/core/domain/claude/ports/claudeService";
 import type {
+  AssistantContent,
   ChunkData,
   SDKMessage,
   SendMessageInput,
+  UserContent,
 } from "@/core/domain/claude/types";
 import { ClaudeError } from "@/lib/error";
 
@@ -28,18 +30,29 @@ export class MockClaudeService implements ClaudeService {
     const messages: SDKMessage[] = this.mockResult || [
       {
         type: "assistant",
+        session_id: "test-session",
         message: {
           id: "msg_stream_123",
           content: [
             {
               type: "text",
               text: responseText,
+              citations: null,
             },
           ],
           role: "assistant",
           model: "claude-3-sonnet-20240229",
           stop_reason: "end_turn",
           stop_sequence: null,
+          type: "message",
+          usage: {
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 0,
+            input_tokens: 10,
+            output_tokens: 15,
+            server_tool_use: null,
+            service_tier: null,
+          },
         },
       },
       {
@@ -52,12 +65,6 @@ export class MockClaudeService implements ClaudeService {
         result: "success",
         session_id: "test-session",
         total_cost_usd: 0.001,
-        usage: {
-          input_tokens: 10,
-          output_tokens: 15,
-          cache_creation_input_tokens: 0,
-          cache_read_input_tokens: 0,
-        },
       },
     ];
 
@@ -89,5 +96,34 @@ export class MockClaudeService implements ClaudeService {
     this.shouldFailNext = false;
     this.mockResult = null;
     this.responseDelay = 0;
+  }
+
+  parseAssistantContent(
+    rawContent: string,
+  ): Result<AssistantContent, ClaudeError> {
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (!Array.isArray(parsed)) {
+        return err(new ClaudeError("Assistant content must be an array"));
+      }
+      return ok(parsed as AssistantContent);
+    } catch (error) {
+      return err(
+        new ClaudeError("Invalid JSON format for assistant content", error),
+      );
+    }
+  }
+
+  parseUserContent(rawContent: string): Result<UserContent, ClaudeError> {
+    try {
+      const parsed = JSON.parse(rawContent);
+      if (typeof parsed !== "string" && !Array.isArray(parsed)) {
+        return err(new ClaudeError("User content must be string or array"));
+      }
+      return ok(parsed as UserContent);
+    } catch (error) {
+      // If it's not valid JSON, treat it as plain text
+      return ok(rawContent);
+    }
   }
 }

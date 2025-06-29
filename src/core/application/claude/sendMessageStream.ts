@@ -1,6 +1,7 @@
 import { err, ok, type Result } from "neverthrow";
 import { z } from "zod/v4";
 import type { ChunkData, SDKMessage } from "@/core/domain/claude/types";
+import { isResultMessage } from "@/core/domain/claude/types";
 import type { Session } from "@/core/domain/session/types";
 import { sessionIdSchema } from "@/core/domain/session/types";
 import { ApplicationError } from "@/lib/error";
@@ -125,7 +126,7 @@ export async function sendMessageStream(
 
       const sessionId = claudeResult.value
         .map((message) =>
-          message.type === "result" ? (message.session_id as string) : null,
+          isResultMessage(message) ? message.session_id : null,
         )
         .filter((id): id is string => id !== null)[0];
       const parsedSessionId = sessionIdSchema.parse(sessionId);
